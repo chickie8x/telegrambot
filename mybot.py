@@ -2,11 +2,10 @@ import json
 import random
 
 from pip._vendor import requests
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, bot
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler,MessageHandler,Filters
 import logging
 import html
-
 
 updater = Updater(token='1006575555:AAEuRhycYN78jf-iEBhMIQlev0A9O2Cu4kw', use_context=True)
 dispatcher = updater.dispatcher
@@ -20,8 +19,18 @@ def start(update, context):
 
 
 def pin(update, context):
-    msg=context.bot.send_message(chat_id=update.effective_chat.id, text='pin is running !')
-    context.bot.pin_chat_message(chat_id=update.effective_chat.id,message_id=msg.message_id)
+    msg = context.bot.send_message(chat_id=update.effective_chat.id, text='pin is running !')
+    context.bot.pin_chat_message(chat_id=update.effective_chat.id, message_id=msg.message_id)
+
+
+def filter(update, context):
+    filter_set=['zalo', 'tiền', 'đụ']
+    text=update.message.text
+    for t in filter_set:
+        if t in text:
+            context.bot.delete_message(chat_id=update.effective_chat.id,message_id=update.message.message_id)
+
+
 
 
 
@@ -36,7 +45,7 @@ def get_question():
     url = 'https://opentdb.com/api.php?amount=1&category=18&type=multiple'
     get_data = requests.get(url).json()
     quest = html.unescape(get_data['results'][0]['question'])
-    correct_answer = html.unescape(get_data['results'][0]['correct_answer'] )
+    correct_answer = html.unescape(get_data['results'][0]['correct_answer'])
     answ_set = get_data['results'][0]['incorrect_answers']
     answ_set.insert(random.randint(0, 2), correct_answer)
     return quest, correct_answer, answ_set
@@ -53,13 +62,21 @@ def question(update, context):
     q = data[0]
     correct_answer = data[1]
     keyboard = [[InlineKeyboardButton(text=html.unescape(data[2][0]),
-                                      callback_data=str(data[2][0])+' is correct answer' if data[2][0] == correct_answer else str(data[2][0])+' is incorrect answer')],
+                                      callback_data=str(data[2][0]) + ' is correct answer' if data[2][
+                                                                                                  0] == correct_answer else str(
+                                          data[2][0]) + ' is incorrect answer')],
                 [InlineKeyboardButton(text=html.unescape(data[2][1]),
-                                      callback_data=str(data[2][1])+' is correct answer' if data[2][1] == correct_answer else str(data[2][1])+' is incorrect answer')],
+                                      callback_data=str(data[2][1]) + ' is correct answer' if data[2][
+                                                                                                  1] == correct_answer else str(
+                                          data[2][1]) + ' is incorrect answer')],
                 [InlineKeyboardButton(text=html.unescape(data[2][2]),
-                                      callback_data=str(data[2][2])+' is correct answer' if data[2][2] == correct_answer else str(data[2][2])+' is incorrect answer')],
+                                      callback_data=str(data[2][2]) + ' is correct answer' if data[2][
+                                                                                                  2] == correct_answer else str(
+                                          data[2][2]) + ' is incorrect answer')],
                 [InlineKeyboardButton(text=html.unescape(data[2][3]),
-                                      callback_data=str(data[2][3])+' is correct answer' if data[2][3] == correct_answer else str(data[2][3])+' is incorrect answer')]
+                                      callback_data=str(data[2][3]) + ' is correct answer' if data[2][
+                                                                                                  3] == correct_answer else str(
+                                          data[2][3]) + ' is incorrect answer')]
                 ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -70,8 +87,6 @@ def question(update, context):
 def button(update, context):
     query = update.callback_query
     query.edit_message_text(text=query.data)
-
-
 
 
 def __main__():
@@ -87,9 +102,13 @@ def __main__():
     question_handler = CommandHandler('question', question)
     dispatcher.add_handler(question_handler)
 
+    filter_handler = MessageHandler(Filters.text, filter)
+    dispatcher.add_handler(filter_handler)
+
     dispatcher.add_handler(CallbackQueryHandler(button))
 
     updater.start_polling()
 
-if __name__== "__main__":
+
+if __name__ == "__main__":
     __main__()
